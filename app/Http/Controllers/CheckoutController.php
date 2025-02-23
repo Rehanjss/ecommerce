@@ -4,22 +4,34 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\History;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 
 class CheckoutController extends Controller
 {
     //
     public function show($id): View
     {
-        $product = Product::findOrFail($id);
-		$grossAmount = $product->price;
-		$payments = $this->getpayments($grossAmount);
-        return view('checkout', compact('product', 'payments'));
+      $product = Product::findOrFail($id);
+      $grossAmount = $product->price;
+      $payments = $this->getpayments($grossAmount);
+      return view('checkout', compact('product', 'payments'));
     }
 
     public function pay($grossamount)
     {
-		$payments = $this->getpayments($grossamount);
+      $history = new History();
+      $history->user_id = Auth::user()->id;
+      $history->shipping_receiver_name = Auth::user()->name;
+      $history->shipping_address = 'Citra Indah, Kec. Jonggol, Kab, Bogor, Jawa Barat, 1630';
+      $history->amount = $grossamount;
+
+  		$payments = $this->getpayments($grossamount);
+      $history->payment_token = '';
+      $history->payment_redirect_url = $payments['redirect_url'];
+      $history->payment_id = '';
+      $history->save();
         \Cart::clear();
         return redirect($payments['redirect_url']);
     }
